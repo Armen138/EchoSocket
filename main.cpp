@@ -15,10 +15,9 @@ void kill_server_handler(int signum) {
 int main()
 {
     signal(SIGINT, kill_server_handler);
-    websocket = new WebSocket(8082);
+    websocket = new WebSocket(10138);
     while(true) {
         websocket->run();
     }
-    cout << "Hello world!" << endl;
     return 0;
 }

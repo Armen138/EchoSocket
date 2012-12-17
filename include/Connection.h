@@ -11,6 +11,10 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <regex>
+#include <map>
 
 class Connection
 {

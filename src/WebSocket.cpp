@@ -1,6 +1,6 @@
 #include <zlib.h>
 #include "../include/WebSocket.h"
-#include "../include/Message.h"
+//#include "../include/Message.h"
 
 WebSocket::WebSocket(int port)
 {
@@ -24,7 +24,6 @@ WebSocket::WebSocket(int port)
     {
       perror("error bind failed");
       close(socketFD);
-      //exit(EXIT_FAILURE);
     }
 
     if(-1 == listen(socketFD, 10))
@@ -40,20 +39,9 @@ WebSocket::WebSocket(int port)
 
 void WebSocket::closeSocket() {
     unsigned int i;
-    for(i = 0; i < incoming.size(); i++) {
-        if (-1 == shutdown(incoming[i], SHUT_RDWR)) {
-                perror("can not shutdown socket");
-        }
+    for(i = 0; i < conn.size(); i++) {
+        delete conn[i];
     }
-    for(i = 0; i < connections.size(); i++) {
-        if (-1 == shutdown(connections[i], SHUT_RDWR)) {
-                perror("can not shutdown socket");
-        }
-    }
-
-    /*if (-1 == shutdown(ConnectFD, SHUT_RDWR)) {
-        perror("can not shutdown socket");
-    }*/
     close(socketFD);
 }
 
@@ -65,41 +53,8 @@ void WebSocket::acceptConnections() {
     }
     if(ConnectFD > 0) {
         std::cout << "connection: " << ConnectFD << "\n";
-        incoming.push_back(ConnectFD);
+        conn.push_back(new Connection(ConnectFD));
     }
-
-      /* perform read write operations ...
-      read(ConnectFD,buff,size)*/
-
-    //close(ConnectFD);
-}
-
-void WebSocket::handShake() {
-    if(incoming.size() == 0) return;
-    int i;
-    int s = 0;
-    char buff[256];
-    std::stringstream message;
-    for(i = incoming.size(); i != -1; --i) {
-        do {
-            s = recv(incoming[i], (void*) buff, sizeof(buff), 0);
-            if(s > 0) {
-                message << strndup(buff, s);
-            }
-        } while (s > 0);
-        if(message.str().size() > 0) {
-            std::cout << message.str() << "\n";
-            Message *header = new Message(message.str());
-            message.clear();
-            std::string response = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + header->accept() + "\r\nSec-WebSocket-Protocol: " + header->protocol() + "\r\n\r\n";
-            s = send(incoming[i], response.c_str(), response.size(), 0);
-            connections.push_back(incoming[i]);
-            conn.push_back(new Connection(incoming[i]));
-            incoming.erase(incoming.begin() + i);
-            std::cout << "bytes sent: " << s << "\n";
-        }
-    }
-
 }
 
 void WebSocket::readMessages() {
@@ -107,34 +62,11 @@ void WebSocket::readMessages() {
     for(unsigned int i = 0; i < conn.size(); i++) {
         conn[i]->update();
     }
-    /*
-    if(connections.size() == 0 ) return;
-    int i, s;
-    char buff[256];
-    std::stringstream message("");
-    bytes.clear();
-    for(i = 0; i < connections.size(); i++) {
-        do {
-            s = recv(incoming[i], (void*) buff, sizeof(buff), 0);
-            if(s > 0) {
-                message << strndup(buff, s);
-                bytes << strndup(buff, s);
-
-            }
-        } while (s > 0);
-        if(message.str().size() > 0) {
-            Message *frame = new Message(message.str());
-            //std::cout << "client " << i << " : " << message.str() << "\n";
-            message.clear();
-        }
-        //read from connections[i]
-    }
-    */
 }
 
 void WebSocket::run() {
     acceptConnections();
-    handShake();
+    //handShake();
     readMessages();
 }
 

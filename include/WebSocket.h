@@ -27,9 +27,7 @@ class WebSocket
     protected:
     private:
         int socketFD;
-        std::vector<int> connections;
         std::vector<Connection*> conn;
-        std::vector<int> incoming;
         void readMessages();
         void acceptConnections();
         void handShake();

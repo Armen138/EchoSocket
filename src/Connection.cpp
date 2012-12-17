@@ -1,25 +1,35 @@
 #include "../include/Connection.h"
+#include "../include/HandShake.h"
 
 Connection::Connection(int sock)
 {
     //ctor
-    this->socket = sock;
-    active = true;
+    socket = sock;
+    active = false;
 }
 
 Connection::~Connection()
 {
+    if (-1 == shutdown(socket, SHUT_RDWR)) {
+        perror("can not shutdown socket");
+    }
     //dtor
 }
 
 void Connection::update() {
-    std::string msg = fetch();
-    if(msg != "") {
-        //std::cout << msg << "\n";
-        std::cout << "message length: " << msg.size() << "\n";
-        sendMessage(msg);
+    if(active) {
+        std::string msg = fetch();
+        if(msg != "") {
+            std::cout << "message length: " << msg.size() << "\n";
+            std::cout << "message: " << msg << "\n";
+            sendMessage(msg);
+        }
+    } else {
+        bool connected = HandShake::HandShake(socket);
+        if(connected) {
+            active = true;
+        }
     }
-
 }
 
 void Connection::sendMessage(std::string msg) {
@@ -33,12 +43,9 @@ void Connection::sendMessage(std::string msg) {
     } else {
         if (length < 65535) {
             frame[1] = 126;
-
             frame[2] = length / 256;
-            frame[3] = length - (length / 256);
-            std::cout << "[out] " << (int)frame[2] << ":" << (int)frame[3] <<"\n";
+            frame[3] = length % 256;
             dataStart = 4;
-
         } else {
             unsigned char big[8];
             frame[1] = 127;
@@ -53,13 +60,15 @@ void Connection::sendMessage(std::string msg) {
     }
     frame[dataStart] = '\0';
     strncat((char*)frame, msg.c_str(), msg.size());
-    send(socket, frame, dataStart + length + 1, 0);
+    //std::cout << "send " << msg << "\n";
+    send(socket, frame, dataStart + length, 0);
 }
 
 std::string Connection::fetch() {
     int s;
-    unsigned char byte[1];// = new unsigned char(1);
-    unsigned char maskingKey[4];// = new unsigned char(4);
+    unsigned char   byte[1],
+                    maskingKey[4];
+
     s = recv(socket, (void*) byte, 1, 0);
     if(s == 0) return "";
     if(s != 1) {
@@ -87,9 +96,9 @@ std::string Connection::fetch() {
         std::cout << "warning: unmasked frame ignored\n";
         return "";
     }
-    std::cout << "fin: " << fin << "\n";
+    /*std::cout << "fin: " << fin << "\n";
     std::cout << "opcode " << (int)opcode << "\n";
-    std::cout << "masked: " << masked << "\n";
+    std::cout << "masked: " << masked << "\n";*/
     unsigned long len = 0;
     if(opcode == 1) {
         len = byteVal & 0x7F;
@@ -109,7 +118,7 @@ std::string Connection::fetch() {
             }
         }
         lastLen = len;
-        std::cout << "len: " << len << "\n";
+        //std::cout << "len: " << len << "\n";
     } else {
         len = lastLen;
     }
