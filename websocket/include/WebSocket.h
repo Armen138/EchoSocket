@@ -16,6 +16,8 @@
 #include <regex>
 #include <sstream>
 #include "../include/Connection.h"
+#include "../include/SocketListener.h"
+#include "../include/ConnectionListener.h"
 
 class WebSocket
 {
@@ -24,10 +26,12 @@ class WebSocket
         ~WebSocket();
         void run();
         void closeSocket();
+        void addEventListener(SocketListener* socketListener);
     protected:
     private:
         int socketFD;
         std::vector<Connection*> conn;
+        std::vector<SocketListener*> socketListeners;
         void readMessages();
         void acceptConnections();
         void handShake();

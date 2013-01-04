@@ -1,6 +1,6 @@
 #include <zlib.h>
 #include "../include/WebSocket.h"
-//#include "../include/Message.h"
+#include "../include/SocketListener.h"
 
 WebSocket::WebSocket(int port)
 {
@@ -32,7 +32,7 @@ WebSocket::WebSocket(int port)
       close(socketFD);
       exit(EXIT_FAILURE);
     }
-    std::cout << "Listening on " << port << "\n";
+    //std::cout << "Listening on " << port << "\n";
     int flags = fcntl(socketFD, F_GETFL, 0);
     fcntl(socketFD, F_SETFL, flags | O_NONBLOCK);
 }
@@ -45,6 +45,10 @@ void WebSocket::closeSocket() {
     close(socketFD);
 }
 
+void WebSocket::addEventListener(SocketListener* socketListener) {
+    socketListeners.push_back(socketListener);
+}
+
 void WebSocket::acceptConnections() {
     int ConnectFD = accept4(socketFD, NULL, NULL, SOCK_NONBLOCK);
 
@@ -52,8 +56,13 @@ void WebSocket::acceptConnections() {
         perror("error accept failed");
     }
     if(ConnectFD > 0) {
-        std::cout << "connection: " << ConnectFD << "\n";
-        conn.push_back(new Connection(ConnectFD));
+        //std::cout << "connection: " << ConnectFD << "\n";
+        Connection* connection = new Connection(ConnectFD);
+        //call socketlistener to pass connection
+        for(unsigned int i = 0; i < socketListeners.size(); i++) {
+            socketListeners[i]->onConnect(connection);
+        }
+        conn.push_back(connection);
     }
 }
 

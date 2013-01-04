@@ -1,7 +1,7 @@
 CXX = g++
 CXX_FLAGS = -Wall -fexceptions  -std=c++0x -g -c
 CXX_LDFLAGS = -Lz
-OBJS = main src/Connection src/HandShake src/WebSocket src/base64 src/sha1
+OBJS = main websocket/src/Connection websocket/src/HandShake websocket/src/WebSocket websocket/src/base64 websocket/src/sha1 src/Client src/Server
 
 all :
 	$(foreach OBJ,$(OBJS),$(CXX) $(CXX_FLAGS) $(OBJ).cpp -o $(OBJ).o;)
