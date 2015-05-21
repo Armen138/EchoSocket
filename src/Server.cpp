@@ -6,13 +6,17 @@ Server::Server(int port) {
 }
 
 Server::~Server() {
-	delete websocket;
+    kill();
 }
 
 void Server::run() {
 	while(true) {
 		websocket->run();
 	}
+}
+
+void Server::kill() {
+	delete websocket;
 }
 
 void Server::onConnect(Connection* connection) {

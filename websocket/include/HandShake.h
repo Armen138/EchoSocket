@@ -16,8 +16,10 @@
 #include <regex>
 #include <map>
 
+#include "../include/Connection.h"
+
 namespace HandShake {
-	bool HandShake(int socket);
+	bool HandShake(int socket, Connection* connection);
 	std::string fetch(int socket);
 	std::map<std::string, std::string> parse(std::string raw);
 };

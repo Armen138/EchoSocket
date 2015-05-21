@@ -7,9 +7,10 @@
 class Server: public SocketListener {
 public:
 	Server(int port);
-	~Server();
+	virtual ~Server();
 	void run();
 	void onConnect(Connection* connection);
+    void kill();
 private:
 	WebSocket* websocket;
 	std::vector<Client*> clients;

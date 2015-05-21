@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>EchoSocket Test</title>
+        <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script>
+            var log = function(msg) {
+                return function(e) {
+                    console.log(e);
+                    $('#log').append('<div>' + msg + (e.data ? ': ' + e.data : '') + '</div>');
+                };
+            };
+            var main = function() {
+                var websocket = new WebSocket("ws://localhost:10138", "protocol1");
+                websocket.onopen = log('WebSocket open');
+                websocket.onclose = log('WebSocket close');
+                websocket.onerror = log('WebSocket error');
+                websocket.onmessage = log('WebSocket message');
+                $('#message').on('change', function() {
+                    var message = $(this).val();
+                    websocket.send(message);
+                    $(this).val('');
+                });
+            };
+            $(document).ready(main);
+        </script>
+    </head>
+    <body>
+        <input type="text" id="message"></input>
+        <div id="log"></div>
+    </body>
+</html>

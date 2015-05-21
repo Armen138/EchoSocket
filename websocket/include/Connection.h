@@ -32,6 +32,11 @@ class Connection
         void update();
         void sendMessage(std::string msg = "", bool fin = true,  bool continuation = false);
         void addEventListener(ConnectionListener* connectionListener);
+        std::string userAgent;
+        int version;
+        std::string protocol;
+        std::string extensions;
+        std::string origin;
     protected:
     private:
         std::vector<ConnectionListener*> connectionListeners;

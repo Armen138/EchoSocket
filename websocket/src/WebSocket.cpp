@@ -20,6 +20,10 @@ WebSocket::WebSocket(int port)
     stSockAddr.sin_port = htons(port);
     stSockAddr.sin_addr.s_addr = INADDR_ANY;
 
+    const int optionValue = 1;
+    const socklen_t optionLength = sizeof(optionValue);
+    setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (void*)&optionValue, optionLength);
+
     if(-1 == bind(socketFD,(struct sockaddr *)&stSockAddr, sizeof(stSockAddr)))
     {
       perror("error bind failed");
@@ -32,17 +36,21 @@ WebSocket::WebSocket(int port)
       close(socketFD);
       exit(EXIT_FAILURE);
     }
-    //std::cout << "Listening on " << port << "\n";
+    std::cout << "Listening on " << port << "\n";
     int flags = fcntl(socketFD, F_GETFL, 0);
     fcntl(socketFD, F_SETFL, flags | O_NONBLOCK);
 }
 
 void WebSocket::closeSocket() {
+    std::cout << "Closing all sockets" << std::endl;
     unsigned int i;
     for(i = 0; i < conn.size(); i++) {
         delete conn[i];
     }
-    close(socketFD);
+    int result = close(socketFD);
+    if(result == -1) {
+        std::cout << "Socket close error " << errno << std::endl;
+    }
 }
 
 void WebSocket::addEventListener(SocketListener* socketListener) {
@@ -56,7 +64,6 @@ void WebSocket::acceptConnections() {
         perror("error accept failed");
     }
     if(ConnectFD > 0) {
-        //std::cout << "connection: " << ConnectFD << "\n";
         Connection* connection = new Connection(ConnectFD);
         //call socketlistener to pass connection
         for(unsigned int i = 0; i < socketListeners.size(); i++) {

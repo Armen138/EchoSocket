@@ -22,17 +22,16 @@ void Connection::update() {
     if(active) {
         std::string msg = fetch();
         if(msg != "") {
-            //std::cout << "message length: " << msg.size() << "\n";
-            //sendMessage(msg);
             for(unsigned int i = 0; i < connectionListeners.size(); i++) {
                 connectionListeners[i]->onMessage(msg);
             }
         }
     } else {
-        bool connected = HandShake::HandShake(socket);
+        bool connected = HandShake::HandShake(socket, this);
         if(connected) {
             active = true;
             status = READY;
+            std::cout << "Requested protocol: " << this->protocol << std::endl;
         }
     }
 }
@@ -53,7 +52,6 @@ void Connection::sendMessage(std::string msg, bool fin, bool continuation) {
     if(!continuation) {
         frame[0] |= 1;
     }
-    //std::cout << (int)frame[0] << " header\n";
     if(length < 126) {
         frame[1] = length;
     } else {
@@ -71,9 +69,7 @@ void Connection::sendMessage(std::string msg, bool fin, bool continuation) {
                 seek += step;
             }
 
-            //std::cout << "I have " << pieces.size() << " pieces\n";
             for(unsigned int i = 0; i < pieces.size(); i++) {
-                //std::cout << "send piece " << i << " fin " << (i == pieces.size() -1) << " continuation " << (i != 0) << "\n";
                 sendMessage(pieces[i], (i == pieces.size() -1) , (i != 0));
             }
             return;
@@ -81,8 +77,6 @@ void Connection::sendMessage(std::string msg, bool fin, bool continuation) {
     }
     frame[dataStart] = '\0';
     strncat((char*)frame, msg.c_str(), msg.size());
-    //std::cout << "send " << msg << "\n";
-    //std::cout << "actual len " << ((size_t)(dataStart + length)) << "\n";
 
     send(socket, frame, dataStart + length, 0);
 }
@@ -95,7 +89,6 @@ std::string Connection::fetch() {
     s = recv(socket, (void*) byte, 1, 0);
     if(s == 0) return "";
     if(s != 1) {
-        //connectionError();
         if(s != -1 ) {
             std::cout << "error " << s << "\n";
             status = DISCONNECTED;
@@ -109,7 +102,6 @@ std::string Connection::fetch() {
         return "";
     }
     int byteVal = (int)byte[0];
-    bool fin = ((byteVal & (1 << 7)) == 0x80);
     unsigned char opcode = byteVal & 0x0F;
     s = recv(socket, (void*) byte, 1, 0);
     if(s != 1) {
@@ -123,9 +115,6 @@ std::string Connection::fetch() {
         std::cout << "warning: unmasked frame ignored\n";
         return "";
     }
-    /*std::cout << "fin: " << fin << "\n";
-    std::cout << "opcode " << (int)opcode << "\n";
-    std::cout << "masked: " << masked << "\n";*/
     unsigned long len = 0;
     if(opcode == 1) {
         len = byteVal & 0x7F;
